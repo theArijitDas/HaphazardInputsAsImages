@@ -1,1 +1,1 @@
-# HaphazardInputsAsImages
+# Haphazard Inputs as Images in Online Learning
