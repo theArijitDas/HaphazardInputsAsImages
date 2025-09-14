@@ -1,5 +1,6 @@
 import numpy as np
-from DataCode.data_utils import data_load_magic04, data_load_a8a, data_load_susy, data_load_higgs
+from DataCode.data_utils import data_load_dry_bean, data_load_gas
+from DataCode.data_utils import set_data_path_
 
 def check_mask_each_instance(mask):
     index_0 = np.where(np.sum(mask, axis = 1) == 0)
@@ -9,18 +10,18 @@ def check_mask_each_instance(mask):
         mask[index_0[0][i], random_index[i]] = 1
     return mask
 
-def dataloader(data_folder='magic04',p_available=0.5,seed=42):
+def set_data_path(path):
+    set_data_path_(path)
+
+def dataloader(data_folder='dry_bean',p_available=0.5,seed=42):
     # load data and unique colors using functions from data_utils.py
-    if data_folder=='magic04':
-        X,Y,colors = data_load_magic04(data_folder)
-    elif data_folder=='a8a':
-        X,Y,colors = data_load_a8a(data_folder)
-    elif data_folder=='SUSY':
-        X,Y,colors = data_load_susy(data_folder)
-    elif data_folder=='higgs':
-        X,Y,colors = data_load_higgs()
+    if data_folder == 'dry_bean':
+        X, Y, colors = data_load_dry_bean(data_folder)
+    elif data_folder == 'gas':
+        X, Y, color = data_load_gas(data_folder)
     num_inst=X.shape[0]
     num_feats=X.shape[1]
+    num_classes=np.unique(Y).shape[0]
 
     np.random.seed(seed)
     mask = (np.random.random((num_inst, num_feats)) < p_available).astype(float)# randomly(seeded) drop values according to p_available. 
@@ -30,6 +31,6 @@ def dataloader(data_folder='magic04',p_available=0.5,seed=42):
     X_haphazard = np.where(mask, X, np.nan) # apply mask to data
     mat_rev_mask=np.where(rev_mask, 0.5, np.nan) # reverse mask for plotting nan values in the form of crosses, if needed.
 
-    return X_haphazard, Y, mat_rev_mask, colors
+    return X_haphazard, Y, num_classes, mat_rev_mask, colors
         
         

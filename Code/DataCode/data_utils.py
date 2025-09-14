@@ -1,11 +1,22 @@
-import numpy as np # type: ignore
-import pandas as pd # type: ignore
+# Libraries required
+from scipy.io import arff
+import numpy as np
+import pandas as pd
 import os
-import pickle
-from Utils.utils import seed_everything
+# import pickle
+# from Utils.utils import seed_everything
+
+data_path = None
+
+def set_data_path_(path):
+    global data_path
+    data_path = path
 
 def data_folder_path(data_folder, data_name):
-    return os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'Data', data_folder, data_name)
+    if data_path is None:
+        raise ValueError("`data_path` is set to None. Set `data_path` to the path of the 'Data' folder containing all the datasets.\n\
+        Use `data_load.set_data_path()` method inside the DataCode module to set the path")
+    return os.path.join(os.path.abspath(data_path), data_folder, data_name)
 
 def gen_colors(n, seed=37):
     np.random.seed(seed)
@@ -31,70 +42,55 @@ def gen_colors(n, seed=37):
 
 # functions to load various datasets
 
-def data_load_magic04(data_folder):
-    data_name = "magic04.data"
+# Load dry bean data
+def data_load_dry_bean(data_folder):
+    data_name = "Dry_Bean_Dataset.arff"
     data_path = data_folder_path(data_folder, data_name)
-    print(data_path)
-    data_initial =  pd.read_csv(data_path, sep = "," , header = None, engine = 'python')
-    label = np.array(data_initial[10] == 'g')*1
-    data_initial = data_initial.iloc[:,:10]
-    data_initial.insert(0, column="class", value=label)
-    data = data_initial.sample(frac = 1)
+    data, meta = arff.loadarff(data_path)
 
-    Y = np.array(data.iloc[:,:1])
-    X = np.array(data.iloc[:,1:])
+    data_initial  = pd.DataFrame(data)
+    data_initial['Class'] = data_initial['Class'].str.decode('utf-8')
 
-    colors= gen_colors(X.shape[1], 42)
+    class_encoding = {
+        'SEKER'   : 0,
+        'BARBUNYA': 1,
+        'BOMBAY'  : 2,
+        'CALI'    : 3,
+        'HOROZ'   : 4,
+        'SIRA'    : 5,
+        'DERMASON': 6
+    }
+    data_initial['Class'] = data_initial['Class'].map(class_encoding)
+
+    data = data_initial.sample(frac=1, random_state=42)
+
+    X = data.drop(columns=["Class"]).to_numpy()
+    Y = data["Class"].to_numpy().reshape(-1, 1)
+    colors = gen_colors(X.shape[1], seed=42)
 
     return X, Y, colors
 
-def data_load_a8a(data_folder):
-    data_name = "a8a.txt"
-    n_feat = 123
-    number_of_instances = 32561
-    data_path = data_folder_path(data_folder, data_name)
-    data_initial =  pd.read_csv(data_path, sep = " ", header = None, engine = 'python')
-    data = pd.DataFrame(0, index=range(number_of_instances), columns = list(range(1, n_feat+1)))
-    # 16th column contains only NaN value
-    data_initial = data_initial.iloc[:, :15]
-    for j in range(data_initial.shape[0]):
-            l = [int(i.split(":")[0])-1 for i in list(data_initial.iloc[j, 1:]) if not pd.isnull(i)]
-            data.iloc[j, l] = 1
-    label = np.array(data_initial[0] == -1)*1
-    data.insert(0, column='class', value=label)
-    data = data.sample(frac = 1)
+# Load gas data
+def data_load_gas(data_folder):
+    X, Y = [], []
 
-    Y = np.array(data.iloc[:,:1])
-    X = np.array(data.iloc[:,1:])
-
-    colors= gen_colors(n_feat, 42)
-    return X, Y, colors
-
-def data_load_susy(data_folder):
-    data_name = "SUSY_1M.csv.gz"
-    data_path = data_folder_path(data_folder, data_name)
-    data_initial =  pd.read_csv(data_path, compression='gzip')
-    label = np.array(data_initial["0"] == 1.0)*1
-    data_initial = data_initial.iloc[:,1:]
-    data_initial.insert(0, column="class", value=label)
-    data = data_initial.sample(frac = 1)
-
-    Y = np.array(data.iloc[:,:1])
-    X = np.array(data.iloc[:,1:])
-    colors=gen_colors(X.shape[1], 42)
-    return X, Y, colors
-
-def data_load_higgs():
-    #data_name = ""
-    data_path = "/datasets/HIGGS_1M.csv.gz"
-    data_initial =  pd.read_csv(data_path, compression='gzip')
-    label = np.array(data_initial["0"] == 1.0)*1
-    data_initial = data_initial.iloc[:,1:]
-    data_initial.insert(0, column="class", value=label)
-    data = data_initial.sample(frac = 1)
-
-    Y = np.array(data.iloc[:,:1])
-    X = np.array(data.iloc[:,1:])
-    colors=gen_colors(X.shape[1], 42)
+    # Load each batch file
+    for i in range(1, 11):
+        filepath = data_folder_path(data_folder, f"batch{i}.dat")
+        with open(filepath, 'r') as f:
+            for line in f:
+                # Split label; format: label;concentration feat1 feat2 ... feat128
+                parts = line.strip().split()
+                label = int(parts[0].split(';')[0])-1  # get class number
+                Y.append(label)
+                
+                # Extract features from the remaining x:v format
+                features = [float(p.split(':')[1]) for p in parts[1:]]
+                if len(features) != 128:
+                    raise ValueError(f"Feature length mismatch in file {filepath}: got {len(features)} features.")
+                X.append(features)
+    
+    X, Y = np.array(X, dtype=np.float32), np.array(Y, dtype=np.int32)
+    colors = gen_colors(X.shape[1], seed=42)
 
     return X, Y, colors
