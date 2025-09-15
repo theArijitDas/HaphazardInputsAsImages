@@ -206,7 +206,10 @@ if __name__ == '__main__':
         # auroc = eval_metrics.AUROC(true,pred_logits)
         # auprc = eval_metrics.AUPRC(true,pred_logits)
 
-        metrics = eval_metrics.get_all_metrics(true, preds, pred_logits, time_taken=toc-tic)
+        metrics = eval_metrics.get_all_metrics(true.reshape(-1, 1), 
+                                               preds.reshape(-1, 1), 
+                                               pred_logits.reshape(-1, 1), 
+                                               time_taken=toc-tic)
 
         # if save:
         #     torch.save(model, path_to_result+model_name+f'/{data_name}-{p_available}.pth')
