@@ -90,7 +90,7 @@ def data_load_gas(data_folder):
                     raise ValueError(f"Feature length mismatch in file {filepath}: got {len(features)} features.")
                 X.append(features)
     
-    X, Y = np.array(X, dtype=np.float32), np.array(Y, dtype=np.int32)
+    X, Y = np.array(X, dtype=np.float32), np.array(Y, dtype=np.int32).reshape(-1, 1)
     colors = gen_colors(X.shape[1], seed=42)
 
     return X, Y, colors
