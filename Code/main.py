@@ -12,7 +12,7 @@ import torch.nn as nn
 import sys
 from tqdm import tqdm 
 sys.path.append('/Code/DataCode/')
-path_to_result = "/Results/"
+path_to_result = "./Results/"
 
 from Utils import utils, eval_metrics
 from DataCode.data_load import dataloader, set_data_path
@@ -53,21 +53,39 @@ if __name__ == '__main__':
     parser.add_argument('--save',default=False, type=bool, help='whether to save model state(True) or not(False)')
     parser.add_argument('--load',default=False, type=bool, help='whether to load model state(True) or not(False)')
     parser.add_argument('--nruns', default=2, type=int, help='Number of runs')
+
+    # Suffix while saving
+    parser.add_argument('--suffix', default="", type=str,
+                        help="Suffic to be added to file name while saving results.")
     
     args = parser.parse_args()
-    
-    seed = args.seed
+
+    # Graphical Representation Variables    
     plot_type = args.plottype
+    spacing = args.spacing
+    vert = args.vert
+
+    # Data Variables
     data_name = args.dataname
     p_available = args.p
+
+    # Model Variables
     model_name = args.modelname
+
+    # Training Variables
+    seed = args.seed
     lr = args.lr
-    vert = args.vert
     save = args.save
     load = args.load
     nruns = args.nruns
-    spacing = args.spacing
+
+    # Suffix while saving
+    suffix = args.suffix
+
     utils.seed_everything(seed)
+
+    device='cuda' if torch.cuda.is_available() else 'cpu'
+    print(f"Using device: {device}")
     
     # load data, colors corresponding to features and reverse mask (for nan-marking style plotting)
     # drop_df: dataframe with missing values dropped, labels: target labels, mat_rev_mask: reverse mask for plotting, colors: colors for features
@@ -95,8 +113,6 @@ if __name__ == '__main__':
         # criterion=nn.BCEWithLogitsLoss() # binary cross entropy loss with logits
         criterion=nn.CrossEntropyLoss() # cross entropy loss with logits
         optimizer=optim.Adam(model.parameters(),lr=lr)
-        device='cuda' if torch.cuda.is_available() else 'cpu'
-        print(f"Using device: {device}")
         
         model=model.to(device) 
 
@@ -206,9 +222,9 @@ if __name__ == '__main__':
         # auroc = eval_metrics.AUROC(true,pred_logits)
         # auprc = eval_metrics.AUPRC(true,pred_logits)
 
-        metrics = eval_metrics.get_all_metrics(true.reshape(-1, 1), 
-                                               preds.reshape(-1, 1), 
-                                               pred_logits.reshape(-1, 1), 
+        metrics = eval_metrics.get_all_metrics(np.array(true).reshape(-1, 1), 
+                                               np.array(preds).reshape(-1, 1), 
+                                               np.array(pred_logits).reshape(-1, num_class), 
                                                time_taken=toc-tic)
 
         # if save:
@@ -233,4 +249,7 @@ if __name__ == '__main__':
         results.append(res_dict)
     
     results_df = pd.DataFrame(results)
-    results_df.to_csv(f"{path_to_result}/{model_name}/{data_name}-{p_available}.csv")
+    print(results_df[metrics.keys()].aggregate(["mean", "std"]))
+    os.makedirs(path_to_result, exist_ok=True)
+    results_df.to_csv(f"{path_to_result}/{data_name}-{p_available}-{model_name}-{suffix}.csv")
+    print(f"Results saved at: {path_to_result}/{data_name}-{p_available}-{model_name}-{suffix}.csv")
