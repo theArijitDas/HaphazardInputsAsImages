@@ -18,7 +18,7 @@ def dataloader(data_folder='dry_bean',p_available=0.5,seed=42):
     if data_folder == 'dry_bean':
         X, Y, colors = data_load_dry_bean(data_folder)
     elif data_folder == 'gas':
-        X, Y, color = data_load_gas(data_folder)
+        X, Y, colors = data_load_gas(data_folder)
     num_inst=X.shape[0]
     num_feats=X.shape[1]
     num_classes=np.unique(Y).shape[0]
