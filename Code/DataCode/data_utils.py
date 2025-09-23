@@ -3,8 +3,8 @@ from scipy.io import arff
 import numpy as np
 import pandas as pd
 import os
-# import pickle
-# from Utils.utils import seed_everything
+import pickle
+from Utils.utils import seed_everything
 
 data_path = None
 
@@ -91,6 +91,32 @@ def data_load_gas(data_folder):
                 X.append(features)
     
     X, Y = np.array(X, dtype=np.float32), np.array(Y, dtype=np.int32).reshape(-1, 1)
+    colors = gen_colors(X.shape[1], seed=42)
+
+    return X, Y, colors
+
+# Load imdb dataset:
+def data_load_imdb(data_folder):
+    data_name = "imdb"
+    data_path = data_folder_path(data_folder, data_name)
+    # To load the file
+    with open(data_path, 'rb') as handle:
+        data_initial = pickle.load(handle)
+
+    data_initial = data_initial.astype(float)
+    # Substitute each position containing -1 with nan value
+    data_initial[data_initial == -1] = np.nan
+
+    # Random shuffling of dataset
+    seed_everything(42)
+    np.random.shuffle(data_initial)
+
+    # Rating <=4 is negative and >=7 is positive
+    label = np.array(data_initial[:,0] >= 7)*1
+    data_initial = data_initial[:,1:]
+    
+    Y = label.reshape(label.shape[0], 1)
+    X = data_initial
     colors = gen_colors(X.shape[1], seed=42)
 
     return X, Y, colors

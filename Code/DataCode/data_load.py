@@ -1,5 +1,5 @@
 import numpy as np
-from DataCode.data_utils import data_load_dry_bean, data_load_gas
+from DataCode.data_utils import data_load_dry_bean, data_load_gas, data_load_imdb
 from DataCode.data_utils import set_data_path_
 
 def check_mask_each_instance(mask):
@@ -19,12 +19,18 @@ def dataloader(data_folder='dry_bean',p_available=0.5,seed=42):
         X, Y, colors = data_load_dry_bean(data_folder)
     elif data_folder == 'gas':
         X, Y, colors = data_load_gas(data_folder)
+    elif data_folder == 'imdb':
+        X, Y, colors = data_load_imdb(data_folder)
     num_inst=X.shape[0]
     num_feats=X.shape[1]
     num_classes=np.unique(Y).shape[0]
 
     np.random.seed(seed)
-    mask = (np.random.random((num_inst, num_feats)) < p_available).astype(float)# randomly(seeded) drop values according to p_available. 
+    if data_folder in ["imdb"]:
+        mask = np.ones((X.shape))
+        mask[np.isnan(X)] = 0
+    else:
+        mask = (np.random.random((num_inst, num_feats)) < p_available).astype(float)# randomly(seeded) drop values according to p_available. 
     # 0 means the feature is visible and 1 means the feature is missing
     rev_mask =(1-mask) # reverse mask for plotting nan values in the form of crosses, if needed.
     mask = check_mask_each_instance(mask) # check if any instance has all features missing, if so, randomly select one feature to be visible
