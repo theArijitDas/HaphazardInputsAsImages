@@ -1,5 +1,5 @@
 import numpy as np
-from DataCode.data_utils import data_load_dry_bean, data_load_gas, data_load_imdb
+from DataCode.data_utils import data_load_magic04, data_load_dry_bean, data_load_gas, data_load_imdb
 from DataCode.data_utils import set_data_path_
 
 def check_mask_each_instance(mask):
@@ -15,7 +15,9 @@ def set_data_path(path):
 
 def dataloader(data_folder='dry_bean',p_available=0.5,seed=42):
     # load data and unique colors using functions from data_utils.py
-    if data_folder == 'dry_bean':
+    if data_folder == 'magic04':
+        X, Y, colors = data_load_magic04(data_folder)
+    elif data_folder == 'dry_bean':
         X, Y, colors = data_load_dry_bean(data_folder)
     elif data_folder == 'gas':
         X, Y, colors = data_load_gas(data_folder)

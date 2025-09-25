@@ -42,6 +42,23 @@ def gen_colors(n, seed=37):
 
 # functions to load various datasets
 
+# Load magic04 data
+def data_load_magic04(data_folder):
+    data_name = "magic04.data"
+    data_path = data_folder_path(data_folder, data_name)
+    data_initial =  pd.read_csv(data_path, sep = "," , header = None, engine = 'python')
+    label = np.array(data_initial[10] == 'g')*1
+    data_initial = data_initial.iloc[:,:10]
+    data_initial.insert(0, column="class", value=label)
+    data = data_initial.sample(frac = 1, random_state=42)
+
+    Y = np.array(data.iloc[:,:1])
+    X = np.array(data.iloc[:,1:])
+
+    colors = gen_colors(X.shape[1], seed=42)
+
+    return X, Y, colors
+
 # Load dry bean data
 def data_load_dry_bean(data_folder):
     data_name = "Dry_Bean_Dataset.arff"
@@ -90,7 +107,8 @@ def data_load_gas(data_folder):
                     raise ValueError(f"Feature length mismatch in file {filepath}: got {len(features)} features.")
                 X.append(features)
     
-    X, Y = np.array(X, dtype=np.float32), np.array(Y, dtype=np.int32).reshape(-1, 1)
+    X = np.array(X)
+    Y = np.array(Y).reshape(-1, 1)
     colors = gen_colors(X.shape[1], seed=42)
 
     return X, Y, colors
