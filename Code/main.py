@@ -198,7 +198,7 @@ if __name__ == '__main__':
             # loss_history += [loss.item()]                 # record loss
             
             optimizer.step()
-                
+
 
             with torch.no_grad():
 
@@ -258,5 +258,14 @@ if __name__ == '__main__':
     results_df = pd.DataFrame(results)
     print(results_df[metrics.keys()].aggregate(["mean", "std"]))
     os.makedirs(path_to_result, exist_ok=True)
-    results_df.to_csv(f"{path_to_result}/{data_name}-{p_available}-{model_name}-{suffix}.csv")
-    print(f"Results saved at: {path_to_result}/{data_name}-{p_available}-{model_name}-{suffix}.csv")
+    
+    if data_name in ['imdb']:
+        file_name = {data_name}-{model_name}
+    else:
+        file_name = {data_name}-{p_available}-{model_name}
+
+    if suffix:
+        file_name += f'-{suffix}'
+    
+    results_df.to_csv(f"{path_to_result}/{file_name}.csv")
+    print(f"Results saved at: {path_to_result}/{file_name}.csv")
