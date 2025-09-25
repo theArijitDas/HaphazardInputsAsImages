@@ -93,7 +93,9 @@ if __name__ == '__main__':
     # drop_df: dataframe with missing values dropped, labels: target labels, mat_rev_mask: reverse mask for plotting, colors: colors for features
     # data_folder: name of the dataset, p_available: fraction of data available for training, seed: seed for reproducibility and consistency of colors
     drop_df, labels, num_class, mat_rev_mask, colors = dataloader(data_folder = data_name, p_available = p_available, seed = 42)
-    
+    out_size = num_class if num_class>2 else 1
+
+
     num_inst=drop_df.shape[0]
     num_feats=drop_df.shape[1]
     '''
@@ -107,13 +109,12 @@ if __name__ == '__main__':
         utils.seed_everything(n+start_seed)
         if model_name=='res34':
             model=torchvision.models.resnet34(weights='IMAGENET1K_V1')
-            model.fc=nn.Linear(model.fc.in_features, num_class)
+            model.fc=nn.Linear(model.fc.in_features, out_size)
         elif model_name=='vit_small':
             model=timm.create_model('vit_small_patch16_224',pretrained=True)
             model.head=nn.Linear(model.head.in_features, num_class)
 
-        # criterion=nn.BCEWithLogitsLoss() # binary cross entropy loss with logits
-        criterion=nn.CrossEntropyLoss() # cross entropy loss with logits
+        criterion=nn.CrossEntropyLoss() if out_size > 1 else nn.BCEWithLogitsLoss()
         optimizer=optim.Adam(model.parameters(),lr=lr)
         
         model=model.to(device) 
@@ -182,19 +183,23 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             
             outputs = model(img)
-            
-                
-            outputs = torch.reshape(outputs,(-1,num_class))
-        
-            
-            loss=criterion(outputs,label.long())         # compute loss
-        
+
+            outputs = torch.squeeze(outputs)
+            label = torch.squeeze(label)
+
+            if out_size == 1:
+                label = label.to(outputs.dtype)
+            else:
+                label = label.long()
+
+            loss=criterion(outputs, label)         # compute loss
+
             loss.backward()                               
             # loss_history += [loss.item()]                 # record loss
             
             optimizer.step()
                 
-        
+
             with torch.no_grad():
 
                 end3 = datetime.now()
@@ -226,7 +231,7 @@ if __name__ == '__main__':
 
         metrics = eval_metrics.get_all_metrics(np.array(true).reshape(-1, 1), 
                                                np.array(preds).reshape(-1, 1), 
-                                               np.array(pred_logits).reshape(-1, num_class), 
+                                               np.array(pred_logits).reshape(-1, out_size), 
                                                time_taken=toc-tic)
 
         # if save:
