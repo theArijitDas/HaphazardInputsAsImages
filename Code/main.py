@@ -38,7 +38,7 @@ if __name__ == '__main__':
     
     # Data Variables
     parser.add_argument('--dataname', default = "dry_bean", type = str,
-                        choices = ["dry_bean", "gas"],
+                        choices = ["magic04", "dry_bean", "gas", "imdb"],
                         help='The name of the data')
     parser.add_argument('--p', default = 0.5, type = float, help = "fraction of data available for the model")
     
