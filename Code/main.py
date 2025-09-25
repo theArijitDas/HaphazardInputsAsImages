@@ -49,6 +49,7 @@ if __name__ == '__main__':
     
     # Training Variables
     parser.add_argument('--seed', default=2024, type=int, help='Seeding Number')
+    parser.add_argument('--start_seed', default=0, type=int, help='Starting offset for seed of each run')
     parser.add_argument('--lr', default=2e-5, type=float, help='Learning rate')
     parser.add_argument('--save',default=False, type=bool, help='whether to save model state(True) or not(False)')
     parser.add_argument('--load',default=False, type=bool, help='whether to load model state(True) or not(False)')
@@ -74,6 +75,7 @@ if __name__ == '__main__':
 
     # Training Variables
     seed = args.seed
+    start_seed = args.start_seed
     lr = args.lr
     save = args.save
     load = args.load
@@ -102,7 +104,7 @@ if __name__ == '__main__':
     '''
     results = []
     for n in range(nruns):
-        utils.seed_everything(n)
+        utils.seed_everything(n+start_seed)
         if model_name=='res34':
             model=torchvision.models.resnet34(weights='IMAGENET1K_V1')
             model.fc=nn.Linear(model.fc.in_features, num_class)
